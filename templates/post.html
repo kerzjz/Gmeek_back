@@ -7,7 +7,7 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ blogBase['postUrl'] }}">
 <meta property="og:image" content="{{ blogBase['ogImage'] }}">
-<title>{{ blogBase['postTitle'] }}</title>
+<title>{{ blogBase['postTitle'] }} - Ker ZJZ</title>
 {% if blogBase['highlight']==1 %}<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />{% endif %}
 {{ blogBase['head'] }}
 {% endblock %}
@@ -45,6 +45,7 @@
 {% block header %}
 <h1 class="postTitle">{{ blogBase['postTitle'] }}</h1>
 <div class="title-right">
+    <p>Ker ZJZ</p>
     <a href="{{ blogBase['homeUrl'] }}" id="buttonHome" class="btn btn-invisible circle" title="{{ i18n['home'] }}">
         <svg class="octicon" width="16" height="16">
             <path id="pathHome" fill-rule="evenodd"></path>
