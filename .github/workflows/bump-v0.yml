@@ -1,0 +1,72 @@
+name: Auto bump v0.x
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # 必须拿到全部 tag
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: git config
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 1. 找到最新的 v0.x tag，+0.1
+      - name: calc next tag
+        id: ver
+        run: |
+          # 获取最新 tag（仅 v0.x 系列）
+          LATEST=$(git tag -l 'v0.*' --sort=-v:refname | head -n 1)
+          [ -z "$LATEST" ] && LATEST="v0.3"        # 仓库一个 tag 都没有时的默认值
+          # 去掉 v 前缀，+0.1
+          NUM=${LATEST#v}
+          NEXT=$(echo "$NUM + 0.1" | bc)
+          NEXT_TAG="v${NEXT}"
+          echo "next_tag=$NEXT_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag $LATEST  →  next $NEXT_TAG"
+
+      # 2. 把新版本号写进文件（示例：version.txt）
+      - name: bump file
+        run: |
+          echo "${{ steps.ver.outputs.next_tag }}" > version.txt
+          git add version.txt
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: bump version to ${{ steps.ver.outputs.next_tag }}"
+          git push
+
+      # 3. 打 tag
+      - name: create tag
+        run: |
+          git tag ${{ steps.ver.outputs.next_tag }}
+          git push origin ${{ steps.ver.outputs.next_tag }}
+
+      # 4. 构建产物（按自己项目改）
+      - name: build
+        run: |
+          # 示例：Python  wheel
+          pip install build
+          python -m build
+
+      # 5. 自动生成 Release
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.next_tag }}
+          name:     ${{ steps.ver.outputs.next_tag }}
+          body:     "自动发布 v${{ steps.ver.outputs.next_tag }}"
+          files:    dist/*
+          draft:    false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
